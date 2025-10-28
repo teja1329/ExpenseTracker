@@ -1,14 +1,17 @@
-# --- backend (Express) ---
+# infra/Dockerfile.backend
+# ----- deps -----
 FROM node:20-alpine AS deps
 WORKDIR /app
+# context is backend/, so these files are at the context root:
 COPY package*.json ./
 RUN npm ci --omit=dev
 
+# ----- runner -----
 FROM node:20-alpine
 WORKDIR /app
-ENV NODE_ENV=production
-COPY backend/ ./
 COPY --from=deps /app/node_modules ./node_modules
-EXPOSE 8081
-CMD ["node", "src/index.js"]
+# bring the rest of the backend source
+COPY . .
 
+EXPOSE 8081
+CMD ["node", "server.js"]

@@ -1,0 +1,39 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: ap-south-1
+  parameter-store:
+    BACKEND_ENV: /expensetracker/backend/env   # we'll create this later (multiline .env)
+    FRONTEND_ENV: /expensetracker/frontend/env # optional, only if you need it
+
+phases:
+  pre_build:
+    commands:
+      - echo "Pre-build: login to ECR"
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - ECR_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+      - echo "ECR: ${ECR_URI}"
+      - aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR_URI}
+      - COMMIT_SHA=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)
+      - IMAGE_TAG=${COMMIT_SHA:-latest}
+      # write backend .env (if you need a file inside the image/container runtime you might mount via ECS/EKS secret instead)
+      - echo "$BACKEND_ENV" > backend/.env || true
+      - echo "$FRONTEND_ENV" > frontend/.env || true
+  build:
+    commands:
+      - echo "Build Docker images"
+      - docker build -f infra/Dockerfile.backend -t ${ECR_URI}/expense-tracker-backend:${IMAGE_TAG} .
+      - docker build -f infra/Dockerfile.frontend -t ${ECR_URI}/expense-tracker-frontend:${IMAGE_TAG} .
+  post_build:
+    commands:
+      - echo "Push images"
+      - docker push ${ECR_URI}/expense-tracker-backend:${IMAGE_TAG}
+      - docker push ${ECR_URI}/expense-tracker-frontend:${IMAGE_TAG}
+      - printf '{"backend":"%s","frontend":"%s"}' \
+          "${ECR_URI}/expense-tracker-backend:${IMAGE_TAG}" \
+          "${ECR_URI}/expense-tracker-frontend:${IMAGE_TAG}" > imagedigest.json
+artifacts:
+  files:
+    - imagedigest.json
+

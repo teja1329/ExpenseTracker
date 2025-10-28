@@ -1,0 +1,460 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #3b82f6;
+}
+/* subtle scrollbar for expense list */
+.custom-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 9999px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.25);
+}
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.25) transparent;
+}
+/* soft gradient bg + subtle grain */
+body {
+  background:
+    radial-gradient(1200px 600px at -10% -20%, #f0f8ff 0%, transparent 60%),
+    radial-gradient(1000px 800px at 110% -10%, #fff5f7 0%, transparent 50%),
+    radial-gradient(900px 900px at 50% 120%, #f3f8ff 0%, transparent 50%),
+    #f8fafc;
+}
+
+/* card hover lift */
+.card {
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 36px rgba(0,0,0,.08);
+}
+
+/* nicer focus rings */
+:focus-visible {
+  outline: 2px solid rgba(59,130,246,.7);
+  outline-offset: 2px;
+}
+/* === Animated progress bar styles === */
+@keyframes stripeMove {
+  0%   { background-position: 0 0; }
+  100% { background-position: 40px 0; }
+}
+.bar-stripes {
+  background-image:
+    linear-gradient(
+      45deg,
+      rgba(255,255,255,.35) 25%,
+      transparent 25%,
+      transparent 50%,
+      rgba(255,255,255,.35) 50%,
+      rgba(255,255,255,.35) 75%,
+      transparent 75%,
+      transparent
+    );
+  background-size: 40px 40px;
+  animation: stripeMove 6s linear infinite;
+  box-shadow: 0 0 0 rgba(0,0,0,0); /* reset */
+}
+
+/* Base colors + glow swap depending on budget */
+.bar-blue {
+  background-color: #2563eb;                /* tailwind blue-600 */
+  box-shadow: 0 0 0 0 rgba(37,99,235,.45);  /* outer glow base */
+}
+.bar-red {
+  background-color: #ef4444;                /* tailwind red-500 */
+  box-shadow: 0 0 0 0 rgba(239,68,68,.45);
+}
+
+/* Subtle pulsing glow on hover */
+.bar-blue:hover, .bar-red:hover {
+  box-shadow:
+    0 0 0 4px rgba(255,255,255,.5) inset,
+    0 6px 18px rgba(0,0,0,.08);
+  transition: box-shadow .2s ease;
+}
+
+/* animated gradient border under the navbar */
+/* Animated gradient strip across navbar */
+/* --- Header candy --- */
+
+/* Animated header underline strip */
+.nav-underline {
+  background: linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6,#f59e0b,#34d399,#60a5fa);
+  background-size: 400% 100%;
+  animation: navScroll 10s linear infinite;
+  opacity: .95;
+  border-top: 1px solid rgba(255,255,255,.35);
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.05) inset;
+}
+@keyframes navScroll {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 400% 50%; }
+}
+
+/* Brand hover underline */
+.brand-underline {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: -2px;
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg,#3b82f6,#a855f7,#f59e0b);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .25s ease;
+}
+a.group:hover .brand-underline { transform: scaleX(1); }
+
+/* Link pill with subtle bg on hover + active indicator */
+.nav-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .35rem .75rem;
+  border-radius: 9999px;
+  color: #334155; /* slate-700 */
+  transition: background-color .2s ease, color .2s ease, transform .15s ease;
+}
+.nav-pill:hover {
+  background: rgba(59,130,246,.08); /* blue tint */
+  color: #2563eb; /* blue-600 */
+  transform: translateY(-1px);
+}
+/* tiny active dot under the text (only visible on the Expenses page if you add route logic later) */
+.active-dot {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 6px; height: 6px;
+  background: #2563eb;
+  border-radius: 9999px;
+  transform: translateX(-50%) scale(0);
+  transition: transform .2s ease;
+}
+/* Turn on the dot by adding .is-active on nav-pill if you want route-aware state
+   (Or keep it decorative—your hover already looks great) */
+
+/* Avatar ring (animated conic gradient on hover) */
+.avatar-ring::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, #60a5fa, #a78bfa, #f472b6, #34d399, #60a5fa);
+  z-index: -1;
+  filter: blur(10px);
+  opacity: 0;
+  transition: opacity .25s ease, transform .25s ease;
+}
+.avatar-ring:hover::before {
+  opacity: .65;
+  transform: scale(1.03);
+}
+
+/* Small presence dot on the avatar */
+.avatar-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px; height: 10px;
+  background: #10b981; /* emerald-500 */
+  border: 2px solid #fff;
+  border-radius: 9999px;
+}
+
+/* Focus ring niceness (keyboard nav) */
+:focus-visible {
+  outline: 2px solid rgba(59,130,246,.7);
+  outline-offset: 2px;
+}
+.avatar-ring::before{
+  content:"";position:absolute;inset:-2px;border-radius:9999px;
+  background:conic-gradient(from 0deg,#60a5fa,#a78bfa,#f472b6,#34d399,#60a5fa);
+  filter:blur(10px);opacity:0;transition:opacity .25s ease,transform .25s ease;z-index:-1;
+}
+.avatar-ring:hover::before{opacity:.6;transform:scale(1.03);}
+
+
+/* animated diagonal stripes for progress fill */
+.bar-stripes {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255,255,255,.25) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255,255,255,.25) 50%,
+    rgba(255,255,255,.25) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 16px 16px;
+  animation: moveStripes 1.4s linear infinite;
+}
+@keyframes moveStripes {
+  from { background-position: 0 0; }
+  to   { background-position: 16px 0; }
+}
+.bar-blue { background-color: #2563eb; } /* blue-600 */
+.bar-red  { background-color: #ef4444; } /* red-500 */
+
+/* animated stripes (already in your file—keeping here for completeness) */
+.bar-stripes {
+  background-image:
+    linear-gradient(45deg,
+      rgba(255,255,255,.25) 25%,
+      transparent 25%, transparent 50%,
+      rgba(255,255,255,.25) 50%,
+      rgba(255,255,255,.25) 75%,
+      transparent 75%, transparent);
+  background-size: 16px 16px;
+  animation: moveStripes 1.4s linear infinite;
+}
+@keyframes moveStripes {
+  from { background-position: 0 0; }
+  to   { background-position: 16px 0; }
+}
+
+/* new: generic rail + fill that accepts a CSS variable for color */
+.progress-rail {
+  position: relative;
+  width: 100%;
+  height: 16px;               /* taller bars */
+  border-radius: 9999px;
+  background: #e5e7eb;        /* gray-200 */
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 9999px;
+  /* two layers: solid color (from --bar-color) + stripes overlay */
+  background-image:
+    linear-gradient(90deg, var(--bar-color), var(--bar-color)),
+    linear-gradient(45deg,
+      rgba(255,255,255,.25) 25%, transparent 25%,
+      transparent 50%, rgba(255,255,255,.25) 50%,
+      rgba(255,255,255,.25) 75%, transparent 75%, transparent);
+  background-size: auto, 16px 16px;
+  animation: moveStripes 1.4s linear infinite;
+}
+
+/* goal marker inside goal rail */
+.goal-marker {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 3px;
+  background: #0ea5e9;        /* sky-500 */
+  box-shadow: 0 0 0 2px rgba(14,165,233,.18);
+  border-radius: 2px;
+}
+.progress-rail{position:relative;width:100%;height:16px;border-radius:9999px;background:#e5e7eb;overflow:hidden}
+.progress-fill{height:100%;width:0;border-radius:9999px;background-image:linear-gradient(90deg,var(--bar-color),var(--bar-color)),
+linear-gradient(45deg,rgba(255,255,255,.25) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.25) 50%,rgba(255,255,255,.25) 75%,transparent 75%,transparent);
+background-size:auto,16px 16px;animation:moveStripes 1.4s linear infinite}
+.goal-marker{position:absolute;top:0;bottom:0;width:3px;background:#0ea5e9;box-shadow:0 0 0 2px rgba(14,165,233,.18);border-radius:2px}
+@keyframes moveStripes{from{background-position:0 0}to{background-position:16px 0}}
+:root{
+  --accent:#3b82f6;
+  --motion:1;
+}
+
+/* gradient strip uses the accent */
+.nav-accent-strip{
+  height: 6px;           /* adjust thickness */
+  background-image: linear-gradient(90deg, var(--accent), color-mix(in oklab, var(--accent) 60%, #a78bfa));
+}
+
+/* helpers you can use in components */
+.accent-text{ color: var(--accent); }
+.accent-bg{   background-color: var(--accent); }
+.accent-ring{ --tw-ring-color: color-mix(in oklab, var(--accent) 70%, #0000); }
+
+/* respect reduced motion preference you set via --motion */
+*{
+  transition-duration: calc(200ms * var(--motion));
+}
+
+/* Subtle scrollbars for scrollable sections */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.4); /* slate-400/40 */
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(71, 85, 105, 0.6); /* slate-600/60 */
+}
+/* --- Savings bars look & motion --- */
+.progress-rail{
+  height: 12px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #f1f5f9, #e5e7eb);
+  box-shadow: inset 0 1px 1px rgba(15,23,42,.05);
+}
+
+.progress-fill{
+  height: 100%;
+  border-radius: inherit;
+  background-size: 200% 100%;
+  animation: barSlide 2.8s linear infinite;
+  /* fallback if CSS vars not set */
+  --bar-from: #22c55e;
+  --bar-to:   #16a34a;
+  background-image: linear-gradient(90deg, var(--bar-from), var(--bar-to));
+  /* soft glow as it grows */
+  box-shadow: 0 0 0 rgba(0,0,0,0);
+}
+
+/* Tone variants */
+.progress-fill.good{
+  --bar-from:#22c55e; /* emerald */
+  --bar-to:#16a34a;
+}
+.progress-fill.warn{
+  --bar-from:#f59e0b; /* amber */
+  --bar-to:#f97316;
+}
+.progress-fill.danger{
+  --bar-from:#ef4444; /* red */
+  --bar-to:#dc2626;
+}
+
+/* animate gradient */
+@keyframes barSlide{
+  0%{ background-position: 0% 0; }
+  100%{ background-position: -200% 0; }
+}
+
+/* Goal marker: thin pillar with subtle float + halo */
+.goal-marker{
+  width: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #64748b, #0ea5e9);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+  animation: markerFloat 2.4s ease-in-out infinite;
+}
+
+@keyframes markerFloat{
+  0%,100% { transform: translate(-1.5px, 0); }
+  50%     { transform: translate(-1.5px, -2px); }
+}
+/* Floating badge that follows the bar end */
+.progress-badge{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 22px;
+  min-width: 36px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  color: #fff;
+  font-size: 11px;
+  line-height: 22px;
+  text-align: center;
+  box-shadow: 0 6px 16px rgba(0,0,0,.12);
+  pointer-events: none;
+}
+
+/* Tiny glowing spark at the tip */
+.spark{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 50%, #fff 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,0) 70%);
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.35),
+    0 0 24px rgba(16,185,129,.35);
+  animation: sparkPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes sparkPulse{
+  0%,100% { transform: translateY(-50%) scale(1);   opacity: .95; }
+  50%     { transform: translateY(-50%) scale(1.12); opacity: 1;   }
+}
+
+/* --- Compact rails & calmer motion --- */
+.progress-rail,
+.progress-rail.progress-rail--sm {            /* allow both class names */
+  height: 12px;                                /* slimmer than 16px */
+  border-radius: 9999px;
+  background: linear-gradient(180deg,#f1f5f9,#e5e7eb);
+  box-shadow: inset 0 1px 1px rgba(15,23,42,.05);
+  overflow: hidden;
+}
+
+/* fill uses tone classes you already have (good/warn/danger) */
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background-size: 200% 100%;
+  animation: barSlide 2.8s linear infinite;
+  --bar-from:#22c55e; --bar-to:#16a34a; /* default good */
+  background-image: linear-gradient(90deg,var(--bar-from),var(--bar-to));
+}
+.progress-fill.good   { --bar-from:#22c55e; --bar-to:#16a34a; }
+.progress-fill.warn   { --bar-from:#f59e0b; --bar-to:#f97316; }
+.progress-fill.danger { --bar-from:#ef4444; --bar-to:#dc2626; }
+
+@keyframes barSlide { 0%{background-position:0 0} 100%{background-position:-200% 0} }
+
+/* Goal marker (softer, thinner) */
+.goal-marker{
+  width: 2px;
+  border-radius: 9999px;
+  background: #0ea5e9;
+  box-shadow: 0 0 0 2px rgba(14,165,233,.12);
+}
+
+/* Badge that floats ABOVE a rail (used by Budget card) */
+.progress-badge--above{
+  position:absolute; top:-22px; transform:translateX(-50%);
+  height: 20px; min-width: 34px; padding: 0 8px;
+  border-radius: 9999px; color:#fff; font-size: 11px; line-height: 20px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.12);
+  pointer-events:none;
+}
+
+/* Smaller, lighter spark (optional) */
+.spark{ width:10px;height:10px; box-shadow:
+  0 0 0 2px rgba(255,255,255,.28), 0 0 18px rgba(16,185,129,.28); }
+@media (max-width: 480px){ .spark { display:none; } }
+
+/* Tighten tiny captions */
+.meta-xs{ font-size:11px; color:#64748b; }
+/* --- Rounded Budget Usage Bar --- */
+.progress-rail.rounded {
+  height: 14px;
+  border-radius: 9999px;               /* full pill shape */
+  background: linear-gradient(180deg, #f1f5f9, #e5e7eb);
+  overflow: hidden;
+  box-shadow: inset 0 1px 1px rgba(15,23,42,.05);
+}
+
+/* Rounded budget bar — only reads vars, doesn't hard-code color */
+.progress-fill.rounded{
+  height: 100%;
+  border-radius: 9999px;
+  background-size: 200% 100%;
+  animation: barSlide 2.8s linear infinite;
+  /* use vars; fall back to green if no tone is applied */
+  background-image: linear-gradient(
+    90deg,
+    var(--bar-from, #22c55e),
+    var(--bar-to,   #16a34a)
+  );
+}

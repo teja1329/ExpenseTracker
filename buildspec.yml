@@ -1,38 +1,68 @@
-version: 0.2
+
 
 env:
   variables:
     AWS_DEFAULT_REGION: ap-south-1
+    # Set these to EXACTLY your ECR repo URIs (no trailing slash)
+    ECR_BACKEND: "448522088355.dkr.ecr.ap-south-1.amazonaws.com/expense-tracker-backend"
+    ECR_FRONTEND: "448522088355.dkr.ecr.ap-south-1.amazonaws.com/expense-tracker-frontend"
   parameter-store:
-    BACKEND_ENV: /expensetracker/backend/env   # we'll create this later (multiline .env)
-    FRONTEND_ENV: /expensetracker/frontend/env # optional, only if you need it
+    # Backend runtime secrets should be injected at RUN TIME (ECS/EKS), not baked.
+    # We still fetch these here in case your Dockerfiles need build-time values,
+    # but prefer not to bake secrets into images.
+    JWT_SECRET: "/expensetracker/JWT_SECRET"
+    CORS_ORIGIN: "/expensetracker/CORS_ORIGIN"
+    APP_ORIGIN: "/expensetracker/APP_ORIGIN"
+    # Frontend build-time API base (safe to bake)
+    VITE_API_BASE: "/expensetracker/VITE_API_BASE"
 
 phases:
   pre_build:
     commands:
-      - echo "Pre-build: login to ECR"
+      - echo "🔐 Logging into ECR in region $AWS_DEFAULT_REGION"
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - ECR_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-      - echo "ECR: ${ECR_URI}"
-      - aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR_URI}
-      - COMMIT_SHA=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "${ECR_URI}"
+      - echo "✅ Logged into ${ECR_URI}"
+      - COMMIT_SHA=$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c1-7)
       - IMAGE_TAG=${COMMIT_SHA:-latest}
-      # write backend .env (if you need a file inside the image/container runtime you might mount via ECS/EKS secret instead)
-      - echo "$BACKEND_ENV" > backend/.env || true
-      - echo "$FRONTEND_ENV" > frontend/.env || true
+      - echo "🧾 Image tag: ${IMAGE_TAG}"
+
   build:
     commands:
-      - echo "Build Docker images"
-      - docker build -f infra/Dockerfile.backend -t ${ECR_URI}/expense-tracker-backend:${IMAGE_TAG} .
-      - docker build -f infra/Dockerfile.frontend -t ${ECR_URI}/expense-tracker-frontend:${IMAGE_TAG} .
+      - echo "🐳 Building backend image"
+      # If your Dockerfile copies from ./backend, keep context at repo root (.)
+      # If it expects context ./backend, change the last argument from "." to "backend"
+      - >
+        docker build
+        -f infra/Dockerfile.backend
+        -t "${ECR_BACKEND}:${IMAGE_TAG}"
+        .
+        # Example (optional) build args if your Dockerfile uses them:
+        # --build-arg JWT_SECRET="$JWT_SECRET"
+        # --build-arg CORS_ORIGIN="$CORS_ORIGIN"
+        # --build-arg APP_ORIGIN="$APP_ORIGIN"
+
+      - echo "🐳 Building frontend image"
+      - >
+        docker build
+        -f infra/Dockerfile.frontend
+        -t "${ECR_FRONTEND}:${IMAGE_TAG}"
+        --build-arg VITE_API_BASE="$VITE_API_BASE"
+        .
+      - echo "✅ Build complete"
+
   post_build:
     commands:
-      - echo "Push images"
-      - docker push ${ECR_URI}/expense-tracker-backend:${IMAGE_TAG}
-      - docker push ${ECR_URI}/expense-tracker-frontend:${IMAGE_TAG}
+      - echo "📤 Pushing images to ECR"
+      - docker push "${ECR_BACKEND}:${IMAGE_TAG}"
+      - docker push "${ECR_FRONTEND}:${IMAGE_TAG}"
       - printf '{"backend":"%s","frontend":"%s"}' \
-          "${ECR_URI}/expense-tracker-backend:${IMAGE_TAG}" \
-          "${ECR_URI}/expense-tracker-frontend:${IMAGE_TAG}" > imagedigest.json
+          "${ECR_BACKEND}:${IMAGE_TAG}" \
+          "${ECR_FRONTEND}:${IMAGE_TAG}" > imagedigest.json
+      - cat imagedigest.json
+      - echo "🏁 Done"
+
 artifacts:
   files:
     - imagedigest.json

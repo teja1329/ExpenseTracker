@@ -1,13 +1,13 @@
 # infra/Dockerfile.backend
 # ----- deps -----
-FROM node:20-alpine AS deps
+FROM public.ecr.aws/docker/library/node:20-alpine AS deps
 WORKDIR /app
 # context is backend/, so these files are at the context root:
 COPY package*.json ./
 RUN npm ci --omit=dev
 
 # ----- runner -----
-FROM node:20-alpine
+FROM public.ecr.aws/docker/library/node:20-alpine
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 # bring the rest of the backend source

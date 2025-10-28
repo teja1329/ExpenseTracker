@@ -2,19 +2,32 @@
 FROM public.ecr.aws/docker/library/node:20-alpine AS build
 WORKDIR /app
 
-# Copy only manifests first for better caching
+# Copy only package manifests first for caching
 COPY package*.json ./
-RUN npm ci   # 👈 remove --omit=dev here
 
-# Now copy the rest of the app and build
+# Install ALL dependencies (include devDependencies for vite)
+RUN npm ci --no-audit --no-fund
+
+# Sanity check vite installation
+RUN npx vite --version
+
+# Copy the rest of the frontend source
 COPY . .
+
+# Inject API base URL (optional)
+ARG VITE_API_BASE
+ENV VITE_API_BASE=$VITE_API_BASE
+
+# Run build
 RUN npm run build
 
 # --- runtime stage (nginx) ---
 FROM public.ecr.aws/docker/library/nginx:1.25-alpine
+
+# Copy static build files to nginx html dir
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# SPA routing fix
+# SPA routing (React Router fix)
 RUN sed -i 's/try_files $uri $uri\/ =404;/try_files $uri $uri\/ \/index.html;/' /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

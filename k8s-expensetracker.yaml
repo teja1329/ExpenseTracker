@@ -1,4 +1,3 @@
-# k8s-expensetracker.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,14 +6,44 @@ metadata:
 spec:
   replicas: 2
   selector:
-    matchLabels: { app: backend }
+    matchLabels:
+      app: backend
   template:
     metadata:
-      labels: { app: backend }
+      labels:
+        app: backend
     spec:
+      volumes:
+        - name: data
+          emptyDir: {}
+      initContainers:
+        - name: init-db
+          image: public.ecr.aws/docker/library/node:20-alpine
+          workingDir: /app
+          command:
+            - sh
+            - -lc
+            - |
+              set -e
+              apk add --no-cache sqlite
+              # ensure data dir exists
+              mkdir -p /app/data
+              # create DB if missing (assumes schema.sql is inside the backend image at /app/schema.sql)
+              if [ ! -f /app/data/expense_app.db ]; then
+                if [ -f /app/schema.sql ]; then
+                  sqlite3 /app/data/expense_app.db < /app/schema.sql
+                else
+                  echo "ERROR: /app/schema.sql not found in image. Ensure your backend image includes it."
+                  exit 1
+                fi
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
       containers:
         - name: backend
-          image: 448522088355.dkr.ecr.ap-south-1.amazonaws.com/expense-tracker-backend:35fa194
+          image: 448522088355.dkr.ecr.ap-south-1.amazonaws.com/expense-tracker-backend:saiteja
+          imagePullPolicy: Always
           ports:
             - containerPort: 4000
           env:
@@ -23,17 +52,33 @@ spec:
             - name: PORT
               value: "4000"
             - name: JWT_SECRET
-              valueFrom: { secretKeyRef: { name: app-secrets, key: JWT_SECRET } }
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SECRET
             - name: CORS_ORIGIN
-              valueFrom: { secretKeyRef: { name: app-secrets, key: CORS_ORIGIN } }
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: CORS_ORIGIN
             - name: APP_ORIGIN
-              valueFrom: { secretKeyRef: { name: app-secrets, key: APP_ORIGIN } }
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: APP_ORIGIN
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
           readinessProbe:
-            httpGet: { path: /health, port: 4000 }
+            httpGet:
+              path: /health
+              port: 4000
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
-            httpGet: { path: /health, port: 4000 }
+            httpGet:
+              path: /health
+              port: 4000
             initialDelaySeconds: 30
             periodSeconds: 20
 ---
@@ -43,7 +88,8 @@ metadata:
   name: backend
   namespace: expensetracker
 spec:
-  selector: { app: backend }
+  selector:
+    app: backend
   ports:
     - name: http
       port: 4000
@@ -58,25 +104,30 @@ metadata:
 spec:
   replicas: 2
   selector:
-    matchLabels: { app: frontend }
+    matchLabels:
+      app: frontend
   template:
     metadata:
-      labels: { app: frontend }
+      labels:
+        app: frontend
     spec:
       containers:
         - name: frontend
-          image: 448522088355.dkr.ecr.ap-south-1.amazonaws.com/expense-tracker-frontend:35fa194
+          image: 448522088355.dkr.ecr.ap-south-1.amazonaws.com/expense-tracker-frontend:saiteja
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
-          env:
-            - name: VITE_API_BASE
-              value: "/api"
+          # VITE_API_BASE is used at build time; fine to omit here for nginx runtime
           readinessProbe:
-            httpGet: { path: /, port: 80 }
+            httpGet:
+              path: /
+              port: 80
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            httpGet: { path: /, port: 80 }
+            httpGet:
+              path: /
+              port: 80
             initialDelaySeconds: 15
             periodSeconds: 20
 ---
@@ -86,29 +137,26 @@ metadata:
   name: frontend
   namespace: expensetracker
 spec:
-  selector: { app: frontend }
+  selector:
+    app: frontend
   ports:
     - name: http
       port: 80
       targetPort: 80
   type: ClusterIP
 ---
-# Ingress: ALB (internet-facing), routes /api -> backend, / -> frontend
+# ALB Ingress (internet-facing), routes /api -> backend, / -> frontend
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: expensetracker
   namespace: expensetracker
   annotations:
-    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
-    # Use your public subnets tagged for ELB; ALB controller finds them via tags
-    alb.ingress.kubernetes.io/target-type: instance
+    alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
-    # Optional: redirect HTTP->HTTPS if you later add TLS; for now keep HTTP only.
-    # alb.ingress.kubernetes.io/actions.ssl-redirect: >
-    #   {"Type":"redirect","RedirectConfig":{"Protocol":"HTTPS","Port":"443","StatusCode":"HTTP_301"}}
 spec:
+  ingressClassName: alb
   rules:
     - http:
         paths:
@@ -126,4 +174,3 @@ spec:
                 name: frontend
                 port:
                   number: 80
-

@@ -20,13 +20,13 @@ phases:
       - aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${ECR_URI}
       - echo "🧾 Compute image tag from commit sha"
       - COMMIT_SHA=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION:-latest} | cut -c1-7)
-      - IMAGE_TAG=${COMMIT_SHA:-latest}
+      - IMAGE_TAG=saiteja
       - echo "TAG=${IMAGE_TAG}"
 
   build:
     commands:
       - echo "🐳 Building backend image..."
-      - docker build -f infra/Dockerfile.backend -t backend:build --build-arg JWT_SECRET="$JWT_SECRET" --build-arg CORS_ORIGIN="$CORS_ORIGIN" --build-arg APP_ORIGIN="$APP_ORIGIN" backend
+      - docker build -f backend/Dockerfile -t backend:build --build-arg JWT_SECRET="$JWT_SECRET" --build-arg CORS_ORIGIN="$CORS_ORIGIN" --build-arg APP_ORIGIN="$APP_ORIGIN" backend
       - docker tag backend:build ${ECR_URI}/expense-tracker-backend:${IMAGE_TAG}
 
       - echo "🐳 Building frontend image..."

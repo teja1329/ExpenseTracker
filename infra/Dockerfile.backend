@@ -1,17 +1,25 @@
-# infra/Dockerfile.backend
-# ----- deps -----
-FROM public.ecr.aws/docker/library/node:20-alpine AS deps
+# --- build runtime image ---
+FROM public.ecr.aws/docker/library/node:20-alpine
+
+# Install sqlite CLI so we can initialize the DB
+RUN apk add --no-cache sqlite
+
 WORKDIR /app
-# context is backend/, so these files are at the context root:
-COPY package*.json ./
+
+# Install deps
+COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
-# ----- runner -----
-FROM public.ecr.aws/docker/library/node:20-alpine
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-# bring the rest of the backend source
-COPY . .
+# Copy app code (includes schema.sql)
+COPY backend/ ./
 
-EXPOSE 8081
-CMD ["node", "src/server.js"]
+# Make sure data directory exists
+RUN mkdir -p /app/data
+
+# Entry point script will create the DB if missing, then start server
+COPY infra/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 4000
+CMD ["/app/entrypoint.sh"]
+
